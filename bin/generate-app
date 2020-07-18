@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# TODO: app is completely unsigned, it needs to be signed
+set -e
+set -x
+PATCH=1
+VER=0.6.4
+PROJECT=x48
+BINZIP=$PROJECT-$VER-osx.zip
+RESULT=$PROJECT-${VER}_$PATCH.tar.xz
+SIGNATURE=$RESULT.asc
+APP_ROOT=$PROJECT-${VER}\ osx
+APP=$PROJECT.app
+APP_PATH="$APP_ROOT"/$APP
+rm -rf $RESULT $SIGNATURE $BINZIP "$APP_ROOT"
+curl -L https://sites.google.com/a/sharkus.com/sharkus-com/Home/${PROJECT}-${VER}%20osx.zip -o $BINZIP
+unzip $BINZIP "$APP_PATH/*"
+cat > "$APP_PATH"/Contents/Resources/script << 'PATCH'
+if ! pgrep -q Xquartz; then
+  open -a xquartz
+  sleep 2
+fi
+./x48 +terminal -display :0
+PATCH
+tar jcf $RESULT "$APP_PATH" -C "$APP_ROOT"
+gpg --batch --no-tty --detach-sign --armor $RESULT
+rm -rf "$APP_ROOT" $BINZIP
